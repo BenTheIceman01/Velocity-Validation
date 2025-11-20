@@ -671,13 +671,27 @@ class VelocityValidatorApp:
             ))
             
     def save_formatted_excel(self, df, output_path):
-        """Save DataFrame to Excel with HD Supply formatting"""
+        """Save DataFrame to Excel with HD Supply formatting and Summary sheet"""
         with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+            # Write main data sheet
             df.to_excel(writer, sheet_name='Velocity Validation', index=False)
             
-            # Get the workbook and worksheet
+            # Create Summary sheet with statistics
+            total_records = len(df)
+            matches = df['Match'].sum() if 'Match' in df.columns else 0
+            mismatches = total_records - matches
+            
+            summary_data = {
+                'Statistics': ['Total Records', 'Matches', 'Mismatches'],
+                'Count': [total_records, int(matches), int(mismatches)]
+            }
+            summary_df = pd.DataFrame(summary_data)
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            
+            # Get the workbook and worksheets
             workbook = writer.book
             worksheet = writer.sheets['Velocity Validation']
+            summary_sheet = writer.sheets['Summary']
             
             # Apply formatting
             from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
@@ -742,6 +756,55 @@ class VelocityValidatorApp:
                         pass
                 adjusted_width = min(max_length + 3, 50)
                 worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Format Summary sheet
+            from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+            
+            # HD Supply branded header
+            header_fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
+            header_font = Font(color="FFD700", bold=True, size=12)
+            
+            data_font = Font(size=11, bold=True)
+            number_fill = PatternFill(start_color="FFFACD", end_color="FFFACD", fill_type="solid")
+            
+            thin_border = Border(
+                left=Side(style='thin', color='CCCCCC'),
+                right=Side(style='thin', color='CCCCCC'),
+                top=Side(style='thin', color='CCCCCC'),
+                bottom=Side(style='thin', color='CCCCCC')
+            )
+            
+            # Format summary headers
+            for cell in summary_sheet[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.border = thin_border
+            
+            # Format summary data rows
+            for row_idx in range(2, 5):  # Rows 2-4 (Total, Matches, Mismatches)
+                for col_idx in range(1, 3):  # Columns A-B
+                    cell = summary_sheet.cell(row=row_idx, column=col_idx)
+                    cell.font = data_font
+                    cell.border = thin_border
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                    
+                    if col_idx == 2:  # Count column
+                        cell.fill = number_fill
+                        cell.number_format = '#,##0'
+            
+            # Set column widths for summary
+            summary_sheet.column_dimensions['A'].width = 20
+            summary_sheet.column_dimensions['B'].width = 15
+            
+            # Add title row
+            summary_sheet.insert_rows(1)
+            summary_sheet['A1'] = 'VELOCITY VALIDATION SUMMARY'
+            summary_sheet.merge_cells('A1:B1')
+            title_cell = summary_sheet['A1']
+            title_cell.font = Font(color="FFD700", bold=True, size=14)
+            title_cell.fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
+            title_cell.alignment = Alignment(horizontal="center", vertical="center")
                 
 
 
@@ -749,8 +812,8 @@ def main():
     root = tk.Tk()
     
     # Center window on screen
-    window_width = 800
-    window_height = 700
+    window_width = 900
+    window_height = 750
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     center_x = int(screen_width/2 - window_width/2)
