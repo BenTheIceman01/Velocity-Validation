@@ -569,6 +569,11 @@ class VelocityValidatorApp:
                 on=['JDA_ITEM', 'JDA_LOC'],
                 how='left'
             )
+            
+            # Add DCSKU column (concatenate DC + USN)
+            if 'DC' in df_merged.columns and 'USN' in df_merged.columns:
+                df_merged['DCSKU'] = df_merged['DC'].astype(str) + df_merged['USN'].astype(str)
+            
             time.sleep(0.3)
             self.root.after(0, lambda: self.update_progress_step(5, "complete"))
             
