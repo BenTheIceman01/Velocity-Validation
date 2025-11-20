@@ -452,10 +452,11 @@ class VelocityValidatorApp:
             
             cur = con.cursor()
             
+            # First, try to get the actual column names from the table
             query = """
             SELECT
-                JDA_ITEM,
-                JDA_LOC,
+                ITEM as JDA_ITEM,
+                LOC as JDA_LOC,
                 UDC_VELOCITY_CODE
             FROM
                 EDP.STD_JDA.SKUEXTRACT
