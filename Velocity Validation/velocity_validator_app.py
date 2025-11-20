@@ -2,7 +2,30 @@
 HD Supply™ Velocity Validator
 Developed by: Ben F. Benjamaa
 
-A modern application for validating velocity codes against Snowflake data.
+A modern, sophisticated application for validating velocity codes against Snowflake data.
+
+Features:
+- Modern GUI with HD Supply™ black and yellow branding
+- Automated Snowflake SSO authentication
+- Real-time 10-step progress tracking
+- VLOOKUP functionality for velocity code matching
+- Automated DCSKU column generation (DC + USN concatenation)
+- Excel export with HD Supply™ formatting
+- Summary statistics sheet
+- Match/Mismatch validation with color coding
+
+Requirements:
+- Python 3.8+
+- pandas, openpyxl, snowflake-connector-python
+- HD Supply email for Snowflake authentication
+
+Usage:
+1. Run the application
+2. Select Excel/CSV file with JDA_ITEM and JDA_LOC columns
+3. Enter HD Supply email address
+4. Click PROCESS DATA
+5. Authenticate via browser (SSO)
+6. Review generated Excel report with validation results
 """
 
 import tkinter as tk
@@ -15,7 +38,20 @@ import threading
 from tkinter import font as tkfont
 
 class ModernButton(tk.Canvas):
-    """Custom modern button widget with hover effects"""
+    """
+    Custom modern button widget with hover effects for HD Supply™ interface.
+    
+    Creates a canvas-based button with smooth hover animations and HD Supply branding.
+    
+    Args:
+        parent: Parent widget
+        text: Button text to display
+        command: Function to execute on click
+        bg_color: Normal background color
+        fg_color: Text color
+        hover_color: Background color on hover
+        **kwargs: Additional canvas parameters (width, height)
+    """
     def __init__(self, parent, text, command, bg_color, fg_color, hover_color, **kwargs):
         width = kwargs.pop('width', 200)
         height = kwargs.pop('height', 50)
@@ -28,26 +64,42 @@ class ModernButton(tk.Canvas):
         self.hover_color = hover_color
         self.text = text
         
-        # Create button rectangle
+        # Create button rectangle with HD Supply styling
         self.rect = self.create_rectangle(0, 0, width, height, 
                                           fill=bg_color, outline="")
         self.text_item = self.create_text(width/2, height/2, 
                                          text=text, fill=fg_color,
                                          font=("Segoe UI", 12, "bold"))
         
-        # Bind events
+        # Bind mouse events for interactivity
         self.bind("<Button-1>", lambda e: self.command())
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
         self.configure(cursor="hand2")
         
     def on_enter(self, e):
+        """Change button color on mouse hover"""
         self.itemconfig(self.rect, fill=self.hover_color)
         
     def on_leave(self, e):
+        """Restore button color when mouse leaves"""
         self.itemconfig(self.rect, fill=self.bg_color)
 
 class VelocityValidatorApp:
+    """
+    Main application class for HD Supply™ Velocity Validator.
+    
+    This application provides a sophisticated GUI for validating velocity codes
+    by comparing proposed velocities against current velocities from Snowflake.
+    
+    Key Features:
+    - Automated Snowflake authentication using SSO
+    - Real-time progress tracking with 10-step process visualization
+    - Data merging on JDA_ITEM and JDA_LOC columns
+    - DCSKU column generation (concatenation of DC + USN)
+    - Excel output with two sheets: detailed data and summary statistics
+    - HD Supply™ branded formatting with color-coded matches/mismatches
+    """
     def __init__(self, root):
         self.root = root
         self.root.title("HD Supply™ Velocity Validator")
@@ -424,6 +476,12 @@ class VelocityValidatorApp:
             self.progress_window = None
     
     def browse_file(self):
+        """
+        Open file dialog for user to select Excel/CSV file for validation.
+        
+        Displays a file picker with filters for CSV and Excel files.
+        Updates the UI to show the selected filename with truncation if needed.
+        """
         filename = filedialog.askopenfilename(
             title="Select Excel/CSV file",
             filetypes=[
@@ -435,24 +493,36 @@ class VelocityValidatorApp:
         if filename:
             self.input_file_path.set(filename)
             display_name = os.path.basename(filename)
+            # Truncate long filenames for display
             if len(display_name) > 50:
                 display_name = display_name[:47] + "..."
+            # Update UI with selected file (yellow text indicates selection)
             self.file_label.config(text=f"✓ {display_name}", fg=self.hd_yellow)
             
     def connect_snowflake(self):
-        """Connect to Snowflake and fetch velocity data"""
+        """
+        Establish connection to Snowflake and fetch velocity data.
+        
+        Uses externalbrowser authentication (SSO) for secure access.
+        Queries the SKUEXTRACT table for velocity codes and aliases columns
+        to match the expected format in the input file.
+        
+        Returns:
+            bool: True if connection and data fetch successful, False otherwise
+        """
         try:
-            # Automated connection using externalbrowser authentication
+            # Automated connection using externalbrowser authentication (opens browser for SSO)
             con = snowflake.connector.connect(
-                user=self.sf_inputs['email'].get().strip(),
-                account="HDSUPPLY-DATA",
-                authenticator="externalbrowser",
-                insecure_mode=True
+                user=self.sf_inputs['email'].get().strip(),  # HD Supply email from user input
+                account="HDSUPPLY-DATA",  # HD Supply Snowflake account
+                authenticator="externalbrowser",  # SSO authentication
+                insecure_mode=True  # Allow insecure connections
             )
             
             cur = con.cursor()
             
-            # First, try to get the actual column names from the table
+            # Query Snowflake for velocity data
+            # Aliases ITEM -> JDA_ITEM and LOC -> JDA_LOC to match input file format
             query = """
             SELECT
                 ITEM as JDA_ITEM,
@@ -482,17 +552,29 @@ class VelocityValidatorApp:
             return False
             
     def validate_inputs(self):
-        """Validate all required inputs"""
+        """
+        Validate user inputs before processing.
+        
+        Checks that:
+        1. An input file has been selected
+        2. A valid HD Supply email has been entered
+        3. Email contains @hdsupply.com domain
+        
+        Returns:
+            bool: True if all inputs are valid, False otherwise
+        """
+        # Check if file has been selected
         if not self.input_file_path.get():
             messagebox.showwarning("Missing Input", "Please select an Excel/CSV file!")
             return False
             
-        # Only validate email
+        # Validate HD Supply email address
         email = self.sf_inputs['email'].get().strip()
         if not email or email == "your.email@hdsupply.com":
             messagebox.showwarning("Missing Input", "Please enter your HD Supply email address!")
             return False
             
+        # Ensure email is from HD Supply domain
         if "@hdsupply.com" not in email.lower():
             messagebox.showwarning("Invalid Input", "Please enter a valid HD Supply email address!")
             return False
