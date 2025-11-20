@@ -33,7 +33,7 @@ class ModernButton(tk.Canvas):
                                           fill=bg_color, outline="")
         self.text_item = self.create_text(width/2, height/2, 
                                          text=text, fill=fg_color,
-                                         font=("Segoe UI", 11, "bold"))
+                                         font=("Segoe UI", 12, "bold"))
         
         # Bind events
         self.bind("<Button-1>", lambda e: self.command())
@@ -51,7 +51,7 @@ class VelocityValidatorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("HD Supply™ Velocity Validator")
-        self.root.geometry("800x700")
+        self.root.geometry("900x750")
         self.root.resizable(False, False)
         
         # Modern HD Supply color scheme - Black background with Yellow accents
@@ -62,6 +62,7 @@ class VelocityValidatorApp:
         self.medium_gray = "#2D2D2D"
         self.light_gray = "#404040"
         self.text_gray = "#CCCCCC"
+        self.accent_gold = "#FFA500"
         
         # Configure root window
         self.root.configure(bg=self.bg_black)
@@ -99,12 +100,12 @@ class VelocityValidatorApp:
         
         # Company name with TM
         company_frame = tk.Frame(header_frame, bg=self.bg_black)
-        company_frame.pack(pady=(20, 5))
+        company_frame.pack(pady=(25, 5))
         
         company_label = tk.Label(
             company_frame,
             text="HD SUPPLY",
-            font=("Segoe UI", 32, "bold"),
+            font=("Segoe UI", 36, "bold"),
             bg=self.bg_black,
             fg=self.hd_bright_yellow
         )
@@ -113,31 +114,22 @@ class VelocityValidatorApp:
         tm_label = tk.Label(
             company_frame,
             text="™",
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 18, "bold"),
             bg=self.bg_black,
             fg=self.hd_bright_yellow
         )
         tm_label.pack(side="left", anchor="n", padx=(2, 0))
         
-        # Title
+        # Title with enhanced styling
         title_label = tk.Label(
             header_frame,
             text="VELOCITY VALIDATOR",
-            font=("Segoe UI", 18, "bold"),
+            font=("Segoe UI", 20, "bold"),
             bg=self.bg_black,
-            fg=self.hd_yellow
+            fg=self.hd_yellow,
+            pady=5
         )
         title_label.pack(pady=(0, 5))
-        
-        # Developer credit
-        dev_label = tk.Label(
-            header_frame,
-            text="Developed by: Ben F. Benjamaa",
-            font=("Segoe UI", 9, "italic"),
-            bg=self.bg_black,
-            fg=self.text_gray
-        )
-        dev_label.pack()
         
         # Separator line
         separator = tk.Frame(main_container, bg=self.hd_yellow, height=2)
@@ -150,96 +142,95 @@ class VelocityValidatorApp:
         # File selection section
         self.create_section(content_frame, "STEP 1: SELECT FILE", 0)
         
-        file_info_frame = tk.Frame(content_frame, bg=self.dark_gray)
+        file_info_frame = tk.Frame(content_frame, bg=self.dark_gray, highlightbackground=self.medium_gray, highlightthickness=1)
         file_info_frame.pack(fill="x", pady=(0, 20))
         
         self.file_label = tk.Label(
             file_info_frame,
-            text="No file selected",
+            text="📄 No file selected",
             bg=self.dark_gray,
             fg=self.text_gray,
-            font=("Segoe UI", 10),
+            font=("Segoe UI", 11),
             anchor="w",
-            padx=20,
-            pady=15
+            padx=25,
+            pady=18
         )
         self.file_label.pack(fill="x")
         
         browse_btn = ModernButton(
             content_frame,
-            text="BROWSE FILE",
+            text="📂 BROWSE FILE",
             command=self.browse_file,
             bg_color=self.hd_yellow,
             fg_color=self.bg_black,
             hover_color=self.hd_bright_yellow,
-            width=200,
-            height=45
+            width=220,
+            height=48
         )
-        browse_btn.pack(pady=(10, 20))
+        browse_btn.pack(pady=(12, 25))
         
         # Snowflake connection section
         self.create_section(content_frame, "STEP 2: SNOWFLAKE CONNECTION", 20)
         
-        sf_frame = tk.Frame(content_frame, bg=self.dark_gray)
-        sf_frame.pack(fill="x", pady=(0, 20), padx=0)
+        sf_frame = tk.Frame(content_frame, bg=self.dark_gray, highlightbackground=self.medium_gray, highlightthickness=1)
+        sf_frame.pack(fill="x", pady=(0, 25), padx=0)
         
-        # Create input fields
-        fields = [
-            ("Account", "account", False),
-            ("Username", "username", False),
-            ("Password", "password", True),
-            ("Warehouse", "warehouse", False),
-            ("Database", "database", False),
-            ("Schema", "schema", False)
-        ]
-        
+        # Email input only
         self.sf_inputs = {}
-        for i, (label_text, field, is_password) in enumerate(fields):
-            field_frame = tk.Frame(sf_frame, bg=self.dark_gray)
-            field_frame.pack(fill="x", padx=20, pady=8)
-            
-            label = tk.Label(
-                field_frame,
-                text=label_text + ":",
-                bg=self.dark_gray,
-                fg=self.hd_yellow,
-                font=("Segoe UI", 10, "bold"),
-                width=12,
-                anchor="w"
-            )
-            label.pack(side="left", padx=(0, 10))
-            
-            entry = tk.Entry(
-                field_frame,
-                bg=self.medium_gray,
-                fg=self.hd_bright_yellow,
-                font=("Segoe UI", 10),
-                insertbackground=self.hd_yellow,
-                relief="flat",
-                bd=0,
-                show="●" if is_password else ""
-            )
-            entry.pack(side="left", fill="x", expand=True, ipady=8, ipadx=10)
-            self.sf_inputs[field] = entry
-            
-            # Set default values
-            if field == "database":
-                entry.insert(0, "EDP")
-            elif field == "schema":
-                entry.insert(0, "STD_JDA")
         
-        # Process button
+        field_frame = tk.Frame(sf_frame, bg=self.dark_gray)
+        field_frame.pack(fill="x", padx=25, pady=20)
+        
+        label = tk.Label(
+            field_frame,
+            text="✉️ HD Supply Email:",
+            bg=self.dark_gray,
+            fg=self.hd_yellow,
+            font=("Segoe UI", 11, "bold"),
+            width=18,
+            anchor="w"
+        )
+        label.pack(side="left", padx=(0, 10))
+        
+        entry = tk.Entry(
+            field_frame,
+            bg=self.medium_gray,
+            fg=self.hd_bright_yellow,
+            font=("Segoe UI", 11),
+            insertbackground=self.hd_yellow,
+            relief="solid",
+            bd=1,
+            highlightbackground=self.light_gray,
+            highlightcolor=self.hd_yellow,
+            highlightthickness=1
+        )
+        entry.pack(side="left", fill="x", expand=True, ipady=10, ipadx=12)
+        entry.insert(0, "your.email@hdsupply.com")
+        self.sf_inputs['email'] = entry
+        
+        # Info label with icon
+        info_label = tk.Label(
+            sf_frame,
+            text="🔒 Authentication will open in your browser automatically",
+            bg=self.dark_gray,
+            fg=self.text_gray,
+            font=("Segoe UI", 9, "italic"),
+            anchor="w"
+        )
+        info_label.pack(fill="x", padx=25, pady=(0, 18))
+        
+        # Process button with enhanced styling
         process_btn = ModernButton(
             content_frame,
-            text="PROCESS DATA",
+            text="⚡ PROCESS DATA",
             command=self.process_data,
             bg_color=self.hd_yellow,
             fg_color=self.bg_black,
             hover_color=self.hd_bright_yellow,
-            width=250,
-            height=55
+            width=280,
+            height=60
         )
-        process_btn.pack(pady=20)
+        process_btn.pack(pady=25)
         self.process_btn = process_btn
         
         # Progress bar
@@ -260,34 +251,56 @@ class VelocityValidatorApp:
         )
         self.status_label.pack(pady=10)
         
-        # Footer
-        footer_frame = tk.Frame(main_container, bg=self.bg_black, height=40)
+        # Footer with gradient effect
+        footer_frame = tk.Frame(main_container, bg=self.bg_black, height=50)
         footer_frame.pack(fill="x", side="bottom")
         footer_frame.pack_propagate(False)
         
-        footer_separator = tk.Frame(footer_frame, bg=self.hd_yellow, height=1)
+        footer_separator = tk.Frame(footer_frame, bg=self.hd_yellow, height=2)
         footer_separator.pack(fill="x", padx=20)
         
-        footer_label = tk.Label(
-            footer_frame,
+        # Footer content container
+        footer_content = tk.Frame(footer_frame, bg=self.bg_black)
+        footer_content.pack(fill="both", expand=True)
+        
+        # Left side - copyright
+        footer_left = tk.Label(
+            footer_content,
             text=f"© {datetime.now().year} HD Supply™ | Version 1.0",
             font=("Segoe UI", 8),
             bg=self.bg_black,
             fg=self.text_gray
         )
-        footer_label.pack(pady=10)
+        footer_left.pack(side="left", padx=30, pady=12)
+        
+        # Right side - developer credit
+        footer_right = tk.Label(
+            footer_content,
+            text="Developed by: Ben F. Benjamaa",
+            font=("Segoe UI", 9, "italic"),
+            bg=self.bg_black,
+            fg=self.hd_yellow
+        )
+        footer_right.pack(side="right", padx=30, pady=12)
         
     def create_section(self, parent, title, pady_top):
-        """Create a section header"""
+        """Create a section header with enhanced styling"""
+        section_container = tk.Frame(parent, bg=self.bg_black)
+        section_container.pack(fill="x", pady=(pady_top, 10))
+        
+        # Decorative line before title
+        left_line = tk.Frame(section_container, bg=self.accent_gold, height=2, width=30)
+        left_line.pack(side="left", padx=(0, 10))
+        
         section_label = tk.Label(
-            parent,
+            section_container,
             text=title,
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 12, "bold"),
             bg=self.bg_black,
             fg=self.hd_bright_yellow,
             anchor="w"
         )
-        section_label.pack(fill="x", pady=(pady_top, 10))
+        section_label.pack(side="left")
         
     def browse_file(self):
         filename = filedialog.askopenfilename(
@@ -303,30 +316,38 @@ class VelocityValidatorApp:
             display_name = os.path.basename(filename)
             if len(display_name) > 50:
                 display_name = display_name[:47] + "..."
-            self.file_label.config(text=f"✓ {display_name}")
+            self.file_label.config(text=f"✓ {display_name}", fg=self.hd_yellow)
             
     def connect_snowflake(self):
         """Connect to Snowflake and fetch velocity data"""
         try:
+            # Automated connection using externalbrowser authentication
             conn = snowflake.connector.connect(
-                account=self.sf_inputs['account'].get().strip(),
-                user=self.sf_inputs['username'].get().strip(),
-                password=self.sf_inputs['password'].get(),
-                warehouse=self.sf_inputs['warehouse'].get().strip(),
-                database=self.sf_inputs['database'].get().strip(),
-                schema=self.sf_inputs['schema'].get().strip()
+                user=self.sf_inputs['email'].get().strip(),
+                account="HDSUPPLY-DATA",
+                authenticator="externalbrowser",
+                insecure_mode=True
             )
+            
+            cur = conn.cursor()
             
             query = """
             SELECT
-                ITEM,
-                LOC,
+                JDA_ITEM,
+                JDA_LOC,
                 UDC_VELOCITY_CODE
             FROM
-                SKUEXTRACT
+                EDP.STD_JDA.SKUEXTRACT
             """
             
-            self.snowflake_data = pd.read_sql(query, conn)
+            cur.execute(query)
+            
+            # Fetch results and convert to DataFrame
+            columns = [col[0] for col in cur.description]
+            results = cur.fetchall()
+            self.snowflake_data = pd.DataFrame(results, columns=columns)
+            
+            cur.close()
             conn.close()
             return True
             
@@ -343,11 +364,15 @@ class VelocityValidatorApp:
             messagebox.showwarning("Missing Input", "Please select an Excel/CSV file!")
             return False
             
-        required_fields = ['account', 'username', 'password', 'warehouse', 'database', 'schema']
-        for field in required_fields:
-            if not self.sf_inputs[field].get().strip():
-                messagebox.showwarning("Missing Input", f"Please enter {field.replace('_', ' ').title()}!")
-                return False
+        # Only validate email
+        email = self.sf_inputs['email'].get().strip()
+        if not email or email == "your.email@hdsupply.com":
+            messagebox.showwarning("Missing Input", "Please enter your HD Supply email address!")
+            return False
+            
+        if "@hdsupply.com" not in email.lower():
+            messagebox.showwarning("Invalid Input", "Please enter a valid HD Supply email address!")
+            return False
                 
         return True
             
@@ -390,11 +415,11 @@ class VelocityValidatorApp:
                 text="⚡ Processing and validating data..."
             ))
             
-            # Perform VLOOKUP - merge on ITEM and LOC
-            if 'ITEM' not in df.columns or 'LOC' not in df.columns:
+            # Perform VLOOKUP - merge on JDA_ITEM and JDA_LOC
+            if 'JDA_ITEM' not in df.columns or 'JDA_LOC' not in df.columns:
                 self.root.after(0, lambda: messagebox.showerror(
                     "Column Error",
-                    "Required columns ITEM and/or LOC not found in input file!"
+                    "Required columns JDA_ITEM and/or JDA_LOC not found in input file!"
                 ))
                 self.root.after(0, self.stop_processing_ui)
                 return
@@ -402,7 +427,7 @@ class VelocityValidatorApp:
             # Merge data
             df_merged = df.merge(
                 self.snowflake_data,
-                on=['ITEM', 'LOC'],
+                on=['JDA_ITEM', 'JDA_LOC'],
                 how='left'
             )
             
