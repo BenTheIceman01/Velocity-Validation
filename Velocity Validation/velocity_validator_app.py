@@ -648,11 +648,12 @@ class VelocityValidatorApp:
             
         except Exception as e:
             import time
+            error_message = str(e)
             time.sleep(0.5)
             self.root.after(0, self.close_progress_window)
-            self.root.after(0, lambda: messagebox.showerror(
+            self.root.after(0, lambda msg=error_message: messagebox.showerror(
                 "Processing Error",
-                f"An error occurred during processing:\n\n{str(e)}"
+                f"An error occurred during processing:\n\n{msg}"
             ))
             
     def save_formatted_excel(self, df, output_path):
