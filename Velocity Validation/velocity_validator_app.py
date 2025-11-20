@@ -586,9 +586,15 @@ class VelocityValidatorApp:
             
             # Step 6: Comparing velocities
             self.root.after(0, lambda: self.update_progress_step(6, "active"))
-            df_merged.rename(columns={'UDC_VELOCITY_CODE': 'Current_Velocity'}, inplace=True)
             
-            if 'PROPOSED_VELOCITY' in df_merged.columns:
+            # Rename UDC_VELOCITY_CODE to Current_Velocity if it exists
+            if 'UDC_VELOCITY_CODE' in df_merged.columns:
+                df_merged.rename(columns={'UDC_VELOCITY_CODE': 'Current_Velocity'}, inplace=True)
+            else:
+                # Column not found, create empty Current_Velocity column
+                df_merged['Current_Velocity'] = None
+            
+            if 'PROPOSED_VELOCITY' in df_merged.columns and 'Current_Velocity' in df_merged.columns:
                 df_merged['Match'] = df_merged.apply(
                     lambda row: row['Current_Velocity'] == row['PROPOSED_VELOCITY'] 
                     if pd.notna(row['Current_Velocity']) and pd.notna(row['PROPOSED_VELOCITY'])
@@ -596,10 +602,11 @@ class VelocityValidatorApp:
                     axis=1
                 )
             else:
-                self.root.after(0, lambda: messagebox.showwarning(
-                    "Warning",
-                    "PROPOSED_VELOCITY column not found in input file.\nMatch column will be set to False."
-                ))
+                if 'PROPOSED_VELOCITY' not in df_merged.columns:
+                    self.root.after(0, lambda: messagebox.showwarning(
+                        "Warning",
+                        "PROPOSED_VELOCITY column not found in input file.\nMatch column will be set to False."
+                    ))
                 df_merged['Match'] = False
             
             time.sleep(0.2)
