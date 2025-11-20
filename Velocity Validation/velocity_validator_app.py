@@ -564,6 +564,13 @@ class VelocityValidatorApp:
             
             # Step 5: Merging datasets
             self.root.after(0, lambda: self.update_progress_step(5, "active"))
+            
+            # Convert merge columns to string type to ensure compatibility
+            df['JDA_ITEM'] = df['JDA_ITEM'].astype(str)
+            df['JDA_LOC'] = df['JDA_LOC'].astype(str)
+            self.snowflake_data['JDA_ITEM'] = self.snowflake_data['JDA_ITEM'].astype(str)
+            self.snowflake_data['JDA_LOC'] = self.snowflake_data['JDA_LOC'].astype(str)
+            
             df_merged = df.merge(
                 self.snowflake_data,
                 on=['JDA_ITEM', 'JDA_LOC'],
