@@ -233,23 +233,11 @@ class VelocityValidatorApp:
         process_btn.pack(pady=25)
         self.process_btn = process_btn
         
-        # Progress bar
-        self.progress = ttk.Progressbar(
-            content_frame,
-            mode="indeterminate",
-            length=400,
-            style="Yellow.Horizontal.TProgressbar"
-        )
-        
-        # Status label
-        self.status_label = tk.Label(
-            content_frame,
-            text="",
-            bg=self.bg_black,
-            fg=self.hd_yellow,
-            font=("Segoe UI", 10, "bold")
-        )
-        self.status_label.pack(pady=10)
+        # Progress window will be created when processing starts
+        self.progress_window = None
+        self.progress_bar = None
+        self.progress_label = None
+        self.step_labels = []
         
         # Footer with gradient effect
         footer_frame = tk.Frame(main_container, bg=self.bg_black, height=50)
@@ -302,6 +290,139 @@ class VelocityValidatorApp:
         )
         section_label.pack(side="left")
         
+    def create_progress_window(self):
+        """Create a detailed progress tracking window"""
+        self.progress_window = tk.Toplevel(self.root)
+        self.progress_window.title("Processing...")
+        self.progress_window.geometry("600x400")
+        self.progress_window.resizable(False, False)
+        self.progress_window.configure(bg=self.bg_black)
+        self.progress_window.transient(self.root)
+        self.progress_window.grab_set()
+        
+        # Center the window
+        self.progress_window.update_idletasks()
+        x = (self.progress_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (self.progress_window.winfo_screenheight() // 2) - (400 // 2)
+        self.progress_window.geometry(f"600x400+{x}+{y}")
+        
+        # Header
+        header = tk.Label(
+            self.progress_window,
+            text="⚙️ Processing Velocity Validation",
+            font=("Segoe UI", 16, "bold"),
+            bg=self.bg_black,
+            fg=self.hd_bright_yellow
+        )
+        header.pack(pady=(20, 10))
+        
+        # Separator
+        separator = tk.Frame(self.progress_window, bg=self.hd_yellow, height=2)
+        separator.pack(fill="x", padx=40, pady=(0, 20))
+        
+        # Steps container
+        steps_frame = tk.Frame(self.progress_window, bg=self.bg_black)
+        steps_frame.pack(fill="both", expand=True, padx=40, pady=10)
+        
+        # Define processing steps
+        steps = [
+            "1. Connecting to Snowflake...",
+            "2. Authenticating user...",
+            "3. Fetching velocity data...",
+            "4. Loading input file...",
+            "5. Validating data structure...",
+            "6. Merging datasets...",
+            "7. Comparing velocities...",
+            "8. Generating Excel report...",
+            "9. Applying formatting...",
+            "10. Saving output file..."
+        ]
+        
+        self.step_labels = []
+        for step in steps:
+            step_frame = tk.Frame(steps_frame, bg=self.bg_black)
+            step_frame.pack(fill="x", pady=3)
+            
+            icon_label = tk.Label(
+                step_frame,
+                text="⏳",
+                font=("Segoe UI", 10),
+                bg=self.bg_black,
+                fg=self.text_gray,
+                width=3
+            )
+            icon_label.pack(side="left")
+            
+            text_label = tk.Label(
+                step_frame,
+                text=step,
+                font=("Segoe UI", 10),
+                bg=self.bg_black,
+                fg=self.text_gray,
+                anchor="w"
+            )
+            text_label.pack(side="left", fill="x")
+            
+            self.step_labels.append((icon_label, text_label))
+        
+        # Progress bar section
+        progress_container = tk.Frame(self.progress_window, bg=self.dark_gray)
+        progress_container.pack(fill="x", padx=40, pady=20)
+        
+        self.progress_label = tk.Label(
+            progress_container,
+            text="Starting...",
+            font=("Segoe UI", 9, "italic"),
+            bg=self.dark_gray,
+            fg=self.hd_yellow
+        )
+        self.progress_label.pack(pady=(10, 5))
+        
+        self.progress_bar = ttk.Progressbar(
+            progress_container,
+            mode="determinate",
+            length=500,
+            style="Yellow.Horizontal.TProgressbar"
+        )
+        self.progress_bar.pack(pady=(5, 10))
+        self.progress_bar['value'] = 0
+        
+    def update_progress_step(self, step_index, status="active"):
+        """Update a specific step's status
+        status: 'active', 'complete', 'error'
+        """
+        if not self.progress_window or step_index >= len(self.step_labels):
+            return
+            
+        icon_label, text_label = self.step_labels[step_index]
+        
+        if status == "active":
+            icon_label.config(text="⏳", fg=self.hd_yellow)
+            text_label.config(fg=self.hd_yellow, font=("Segoe UI", 10, "bold"))
+        elif status == "complete":
+            icon_label.config(text="✓", fg="#00FF00")
+            text_label.config(fg=self.text_gray, font=("Segoe UI", 10))
+        elif status == "error":
+            icon_label.config(text="✗", fg="#FF0000")
+            text_label.config(fg="#FF0000", font=("Segoe UI", 10, "bold"))
+            
+        # Update progress bar
+        if self.progress_bar:
+            progress_percent = ((step_index + 1) / len(self.step_labels)) * 100
+            self.progress_bar['value'] = progress_percent
+            
+            if self.progress_label:
+                self.progress_label.config(text=f"Progress: {int(progress_percent)}%")
+            
+        self.progress_window.update()
+        
+    def close_progress_window(self):
+        """Close the progress window"""
+        if self.progress_window:
+            self.progress_window.grab_release()
+            self.progress_window.destroy()
+            self.progress_window = None
+    
     def browse_file(self):
         filename = filedialog.askopenfilename(
             title="Select Excel/CSV file",
@@ -322,14 +443,14 @@ class VelocityValidatorApp:
         """Connect to Snowflake and fetch velocity data"""
         try:
             # Automated connection using externalbrowser authentication
-            conn = snowflake.connector.connect(
+            con = snowflake.connector.connect(
                 user=self.sf_inputs['email'].get().strip(),
                 account="HDSUPPLY-DATA",
                 authenticator="externalbrowser",
                 insecure_mode=True
             )
             
-            cur = conn.cursor()
+            cur = con.cursor()
             
             query = """
             SELECT
@@ -348,13 +469,14 @@ class VelocityValidatorApp:
             self.snowflake_data = pd.DataFrame(results, columns=columns)
             
             cur.close()
-            conn.close()
+            con.close()
             return True
             
         except Exception as e:
+            error_msg = str(e)
             self.root.after(0, lambda: messagebox.showerror(
                 "Connection Error", 
-                f"Failed to connect to Snowflake:\n\n{str(e)}"
+                f"Failed to connect to Snowflake:\n\n{error_msg}"
             ))
             return False
             
@@ -388,53 +510,71 @@ class VelocityValidatorApp:
     def process_data_thread(self):
         """Process the data in a background thread"""
         try:
-            # Update UI from main thread
-            self.root.after(0, self.start_processing_ui)
+            # Create progress window
+            self.root.after(0, self.create_progress_window)
+            import time
+            time.sleep(0.3)  # Brief pause to show window
             
-            # Connect to Snowflake
-            self.root.after(0, lambda: self.status_label.config(
-                text="⚡ Connecting to Snowflake..."
-            ))
+            # Step 0: Connecting to Snowflake
+            self.root.after(0, lambda: self.update_progress_step(0, "active"))
+            time.sleep(0.2)
+            
+            # Step 1: Authenticating
+            self.root.after(0, lambda: self.update_progress_step(0, "complete"))
+            self.root.after(0, lambda: self.update_progress_step(1, "active"))
             
             if not self.connect_snowflake():
-                self.root.after(0, self.stop_processing_ui)
+                self.root.after(0, lambda: self.update_progress_step(1, "error"))
+                time.sleep(1)
+                self.root.after(0, self.close_progress_window)
                 return
-                
-            self.root.after(0, lambda: self.status_label.config(
-                text="⚡ Loading data file..."
-            ))
             
-            # Read the input file
+            # Step 2: Fetching velocity data (completed in connect_snowflake)
+            self.root.after(0, lambda: self.update_progress_step(1, "complete"))
+            self.root.after(0, lambda: self.update_progress_step(2, "active"))
+            time.sleep(0.3)
+            self.root.after(0, lambda: self.update_progress_step(2, "complete"))
+            
+            # Step 3: Loading input file
+            self.root.after(0, lambda: self.update_progress_step(3, "active"))
             file_path = self.input_file_path.get()
             if file_path.endswith('.csv'):
                 df = pd.read_csv(file_path)
             else:
                 df = pd.read_excel(file_path)
-                
-            self.root.after(0, lambda: self.status_label.config(
-                text="⚡ Processing and validating data..."
-            ))
+            self.root.after(0, lambda: self.update_progress_step(3, "complete"))
             
-            # Perform VLOOKUP - merge on JDA_ITEM and JDA_LOC
+            # Step 4: Validating data structure
+            self.root.after(0, lambda: self.update_progress_step(4, "active"))
+            time.sleep(0.2)
+            
+            # Validate columns
             if 'JDA_ITEM' not in df.columns or 'JDA_LOC' not in df.columns:
+                self.root.after(0, lambda: self.update_progress_step(4, "error"))
+                time.sleep(0.5)
+                self.root.after(0, self.close_progress_window)
                 self.root.after(0, lambda: messagebox.showerror(
                     "Column Error",
                     "Required columns JDA_ITEM and/or JDA_LOC not found in input file!"
                 ))
-                self.root.after(0, self.stop_processing_ui)
                 return
-                
-            # Merge data
+            
+            self.root.after(0, lambda: self.update_progress_step(4, "complete"))
+            
+            # Step 5: Merging datasets
+            self.root.after(0, lambda: self.update_progress_step(5, "active"))
             df_merged = df.merge(
                 self.snowflake_data,
                 on=['JDA_ITEM', 'JDA_LOC'],
                 how='left'
             )
+            time.sleep(0.3)
+            self.root.after(0, lambda: self.update_progress_step(5, "complete"))
             
-            # Rename the velocity code column
+            # Step 6: Comparing velocities
+            self.root.after(0, lambda: self.update_progress_step(6, "active"))
             df_merged.rename(columns={'UDC_VELOCITY_CODE': 'Current_Velocity'}, inplace=True)
             
-            # Add Match column (True/False comparison)
             if 'PROPOSED_VELOCITY' in df_merged.columns:
                 df_merged['Match'] = df_merged.apply(
                     lambda row: row['Current_Velocity'] == row['PROPOSED_VELOCITY'] 
@@ -448,10 +588,12 @@ class VelocityValidatorApp:
                     "PROPOSED_VELOCITY column not found in input file.\nMatch column will be set to False."
                 ))
                 df_merged['Match'] = False
-                
-            self.root.after(0, lambda: self.status_label.config(
-                text="⚡ Generating Excel report..."
-            ))
+            
+            time.sleep(0.2)
+            self.root.after(0, lambda: self.update_progress_step(6, "complete"))
+            
+            # Step 7: Generating Excel report
+            self.root.after(0, lambda: self.update_progress_step(7, "active"))
             
             # Generate output filename
             input_dir = os.path.dirname(file_path)
@@ -459,18 +601,31 @@ class VelocityValidatorApp:
             output_filename = f"Velocity_Validated_{timestamp}.xlsx"
             output_path = os.path.join(input_dir, output_filename)
             
+            time.sleep(0.2)
+            self.root.after(0, lambda: self.update_progress_step(7, "complete"))
+            
+            # Step 8: Applying formatting
+            self.root.after(0, lambda: self.update_progress_step(8, "active"))
+            time.sleep(0.3)
+            
+            # Step 9: Saving output file
+            self.root.after(0, lambda: self.update_progress_step(8, "complete"))
+            self.root.after(0, lambda: self.update_progress_step(9, "active"))
+            
             # Save to Excel with formatting
             self.save_formatted_excel(df_merged, output_path)
+            
+            time.sleep(0.3)
+            self.root.after(0, lambda: self.update_progress_step(9, "complete"))
             
             # Calculate statistics
             total_rows = len(df_merged)
             matches = df_merged['Match'].sum() if 'Match' in df_merged.columns else 0
             mismatches = total_rows - matches
             
-            self.root.after(0, self.stop_processing_ui)
-            self.root.after(0, lambda: self.status_label.config(
-                text=f"✓ SUCCESS! File saved: {output_filename}"
-            ))
+            # Close progress window
+            time.sleep(0.5)
+            self.root.after(0, self.close_progress_window)
             
             self.root.after(0, lambda: messagebox.showinfo(
                 "Processing Complete",
@@ -486,11 +641,9 @@ class VelocityValidatorApp:
             ))
             
         except Exception as e:
-            self.root.after(0, self.stop_processing_ui)
-            self.root.after(0, lambda: self.status_label.config(
-                text="✗ Error occurred during processing",
-                fg="#FF4444"
-            ))
+            import time
+            time.sleep(0.5)
+            self.root.after(0, self.close_progress_window)
             self.root.after(0, lambda: messagebox.showerror(
                 "Processing Error",
                 f"An error occurred during processing:\n\n{str(e)}"
@@ -569,22 +722,7 @@ class VelocityValidatorApp:
                 adjusted_width = min(max_length + 3, 50)
                 worksheet.column_dimensions[column_letter].width = adjusted_width
                 
-    def start_processing_ui(self):
-        """Update UI when processing starts"""
-        self.progress.pack(pady=15)
-        self.progress.start(10)
-        self.process_btn.itemconfig(self.process_btn.rect, fill=self.light_gray)
-        self.process_btn.unbind("<Button-1>")
-        self.process_btn.configure(cursor="")
-        
-    def stop_processing_ui(self):
-        """Update UI when processing stops"""
-        self.progress.stop()
-        self.progress.pack_forget()
-        self.process_btn.itemconfig(self.process_btn.rect, fill=self.hd_yellow)
-        self.process_btn.bind("<Button-1>", lambda e: self.process_data())
-        self.process_btn.configure(cursor="hand2")
-        self.status_label.config(fg=self.hd_yellow)
+
 
 def main():
     root = tk.Tk()
